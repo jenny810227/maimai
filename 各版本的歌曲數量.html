@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <title>版本歌曲數量</title>
+    <style>
+        body {
+            margin: 0 20px;
+        }
+
+        .img-container{
+            width: 200px;
+        }
+
+        .img-container img{
+            width: 100%;
+            height: 100%;
+        }
+
+        .table-striped {
+            border: 1px solid #ddd;
+        }
+
+        .table-container thead {
+            position: sticky;
+            top: 0;
+            background-color: #fff;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="img-container">
+        <img src="logo.png">
+    </div>
+    <div class="table-container">
+        <table class="table table-striped">
+            <thead>
+                <tr id="theadTr">
+                    <th>版本</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
+
+<script>
+
+    const startLevel = 13.0;
+    const endLevel = 15.0;
+    const step = 0.1;
+
+    $(function () {
+        for (let level = startLevel; level <= endLevel; level = parseFloat((level + step).toFixed(1))) {
+            $('#theadTr').append(`<th>${level.toFixed(1)}</th>`);
+        }
+
+        getData();
+    });
+
+    function getData() {
+        $.ajax({
+            url: 'https://dp4p6x0xfi5o9.cloudfront.net/maimai/data.json',
+            type: 'GET',
+            dataType: 'json',
+            success: function (response) {
+                let versionData = {};
+
+                // 初始化版本與等級的數據
+                response.versions.forEach(version => {
+                    versionData[version.version] = {};
+                    for (let level = startLevel; level <= endLevel; level = parseFloat((level + step).toFixed(1))) {
+                        versionData[version.version][level.toFixed(1)] = 0;
+                    }
+                });
+
+                // 遍歷歌曲資料
+                response.songs.forEach(song => {
+                    song.sheets.forEach(sheet => {
+                        let version = song.version;
+                        let level = parseFloat(sheet.internalLevel);
+                        if (Number.isInteger(level)) {
+                            level = level.toFixed(1);
+                        }
+
+                        if (versionData[version]) {
+                            versionData[version][level]++;
+                        }
+                    });
+                });
+
+                // 生成表格
+                for (let version in versionData) {
+                    let row = `<tr><td>${version}</td>`;
+                    for (let level = startLevel; level <= endLevel; level = parseFloat((level + step).toFixed(1))) {
+                        let count = versionData[version][level.toFixed(1)];
+                        row += `<td>${count}</td>`;
+                    }
+                    row += `</tr>`;
+                    $('tbody').append(row);
+                }
+            }
+        });
+    }
+
+
+</script>
