@@ -1,46 +1,52 @@
-(async function() {
-    const urls = [
-      "https://maimaidx-eng.com/maimai-mobile/home/ratingTargetMusic/",
-      "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=1",
-      "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=2",
-      "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=3",
-      "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=4",
-      
-    ];
-  
-    // 取得 HTML 的函數
-    async function fetchHTML(url) {
-      const response = await fetch(url, {
-        method: "GET",
-        credentials: "include", // 保持登入狀態
-      });
-      return await response.text();
+async function fetchAndStoreHTML(urls) {
+  const dbRequest = indexedDB.open("maimaiDB", 1);
+
+  dbRequest.onupgradeneeded = (event) => {
+    const db = event.target.result;
+    db.createObjectStore("htmlPages", { keyPath: "id" });
+  };
+
+  dbRequest.onsuccess = async (event) => {
+    const db = event.target.result;
+    const transaction = db.transaction("htmlPages", "readwrite");
+    const store = transaction.objectStore("htmlPages");
+
+    // 遍歷所有 URL 並獲取 HTML
+    for (const [index, url] of urls.entries()) {
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          credentials: "include", // 保持登入狀態
+        });
+        const html = await response.text();
+
+        // 存儲每個頁面的 HTML 內容
+        store.put({ id: index, url: url, htmlContent: html });
+        console.log(`頁面 ${url} 存儲成功`);
+      } catch (error) {
+        console.error(`抓取或存儲頁面 ${url} 失敗: ${error}`);
+      }
     }
-  
-    // 解析 HTML 並提取數據
-    function parseHTML(html, selector) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      const rows = doc.querySelectorAll(selector);
-  
-      const data = [];
-      rows.forEach(row => {
-        const song = row.querySelector(".song-name")?.innerText.trim() || "Unknown";
-        const score = row.querySelector(".score")?.innerText.trim() || "0";
-        data.push({ song, score });
-      });
-      return data;
-    }
-  
-    // 從各個頁面抓取資料
-    const allData = [];
-    for (const url of urls) {
-      const html = await fetchHTML(url);
-      const data = parseHTML(html, ".table-row"); // 修改選擇器以符合頁面結構
-      allData.push(...data);
-    }
-  
-    // 將資料存入 localStorage 並跳轉到新頁面
-    localStorage.setItem("maimaiData", JSON.stringify(allData));
-    window.location.href = "/your-custom-page.html"; // 替換為你的 HTML 頁面路徑
-  })();
+
+    debugger
+
+    // 完成後跳轉到下一個頁面
+    window.location.href = "https://jenny810227.github.io/maimai/"; // 這裡是你想跳轉的網址
+  };
+
+  dbRequest.onerror = (event) => {
+    console.error("IndexedDB 錯誤：", event.target.error);
+  };
+}
+
+// 要抓取的 URL 列表
+const urls = [
+  "https://maimaidx-eng.com/maimai-mobile/home/ratingTargetMusic/",
+  "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=1",
+  "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=2",
+  "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=3",
+  "https://maimaidx-eng.com/maimai-mobile/record/musicGenre/search/?genre=99&diff=4",
+];
+
+// 存儲 HTML 並轉跳頁面
+fetchAndStoreHTML(urls);
