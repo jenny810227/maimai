@@ -31,7 +31,7 @@ async function fetchAndStoreHTML(urls) {
     debugger
 
     // 完成後跳轉到下一個頁面
-    window.location.href = "https://jenny810227.github.io/maimai/"; // 這裡是你想跳轉的網址
+    window.location.href = "https://jenny810227.github.io/maimai/ScoreIndex.html"; // 這裡是你想跳轉的網址
   };
 
   dbRequest.onerror = (event) => {
